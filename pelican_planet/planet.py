@@ -36,7 +36,7 @@ class FeedError(Exception):
 class Planet:
     def __init__(
             self, feeds, max_articles_per_feed=None, max_summary_length=None,
-            max_age_in_days=None
+            max_age_in_days=1e5
     ):
         self._feeds = feeds
         self._max_articles_per_feed = max_articles_per_feed
