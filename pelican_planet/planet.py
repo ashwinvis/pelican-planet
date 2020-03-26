@@ -16,12 +16,16 @@
 # along with pelican-planet.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import logging
 from operator import attrgetter
 
 import feedparser
 from jinja2 import Template
 
 from .utils import make_date, make_summary
+
+
+logger = logging.getLogger(__name__)
 
 
 class FeedError(Exception):
@@ -38,7 +42,12 @@ class Planet:
         self._articles = []
 
     def _get_feed(self, name, url):
-        parsed = feedparser.parse(url)
+        try:
+            parsed = feedparser.parse(url)
+        except Exception as e:
+            raise FeedError(
+                "Could not parse %s's feed: %s. %s" % (name, url, e)
+            )
         status = parsed.get('status')
 
         if status is None and parsed['bozo']:
@@ -48,10 +57,10 @@ class Planet:
 
         elif status == 404:
             raise FeedError(
-                "Could not download %s's feed: not found" % name)
+                "404: Could not download %s's feed: not found" % name)
 
-        elif status != 200:
-            raise FeedError("Error with %s's feed: %s" % (name, parsed))
+        elif status not in (200, 301, 302):
+            raise FeedError("%d: Error with %s's feed: %s" % (status, name, parsed))
 
         return parsed
 
@@ -77,7 +86,8 @@ class Planet:
                 feed = self._get_feed(name, url)
 
             except FeedError as e:
-                print('ERROR: %s' % e)
+                idx = min(500, len(str(e)))
+                logger.error(str(e)[:idx])
                 continue
 
             articles = self._get_articles(feed, name)
