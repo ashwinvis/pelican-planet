@@ -18,6 +18,7 @@
 
 import logging
 from operator import attrgetter
+from datetime import datetime, timedelta
 
 import feedparser
 from jinja2 import Template
@@ -34,10 +35,13 @@ class FeedError(Exception):
 
 class Planet:
     def __init__(
-            self, feeds, max_articles_per_feed=None, max_summary_length=None):
+            self, feeds, max_articles_per_feed=None, max_summary_length=None,
+            max_age_in_days=None
+    ):
         self._feeds = feeds
         self._max_articles_per_feed = max_articles_per_feed
         self._max_summary_length = max_summary_length
+        self._max_age = datetime.now() - timedelta(days=max_age_in_days)
 
         self._articles = []
 
@@ -60,7 +64,9 @@ class Planet:
                 "404: Could not download %s's feed: not found" % name)
 
         elif status not in (200, 301, 302):
-            raise FeedError("%d: Error with %s's feed: %s" % (status, name, parsed))
+            raise FeedError(
+                "%d: Error with %s's feed: %s" % (status, name, parsed)
+            )
 
         return parsed
 
@@ -77,6 +83,12 @@ class Planet:
         articles = sorted(
             _get_articles(), key=attrgetter('updated'), reverse=True)
         articles = articles[:self._max_articles_per_feed]
+
+        def latest(article):
+            date = article['updated'].replace(tzinfo=None)
+            return date > self._max_age
+
+        articles = filter(latest, articles)
 
         return articles
 
