@@ -92,6 +92,11 @@ in your Pelican config file:
   By default the `summary` of the article will be the full text coming from
   the feed.
 
+* ``PLANET_MAX_AGE_IN_DAYS``: The maximum age of an article to be included in
+  the page.
+
+  By default only articles no older than 180 days are added.
+
 Legalities
 ----------
 
