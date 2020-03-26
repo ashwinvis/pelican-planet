@@ -5,3 +5,4 @@ pytest-cov
 pytest-flakes
 pytest-mccabe
 pytest-pep8
+pytest-profiling

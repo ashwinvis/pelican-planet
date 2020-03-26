@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<opml version="2.0">
+<head>
+    <title>RSS Feeds</title>
+</head>
+<body>
+    <outline title="News" text="News">
+        <outline title="Planet GNOME" text="Planet GNOME" type="rss" htmlUrl="http://planet.gnome.org/atom.xml" xmlUrl="http://planet.gnome.org/atom.xml"/>
+        <outline title="Planet KDE" text="Planet KDE" type="rss" htmlUrl="http://planetKDE.org/" xmlUrl="http://planetkde.org/rss20.xml"/>
+        <outline title="BBC News - Home" text="BBC News - Home" type="rss" htmlUrl="https://www.bbc.co.uk/news/" xmlUrl="http://feeds.bbci.co.uk/news/rss.xml"/>
+        <outline title="NYT > Top Stories" text="NYT > Top Stories" type="rss" htmlUrl="https://www.nytimes.com?emc=rss" xmlUrl="http://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml"/>
+        <outline title="The Guardian" text="The Guardian" type="rss" htmlUrl="https://www.theguardian.com/international" xmlUrl="https://www.theguardian.com/international/rss"/>
+        <outline title="Hacker News" text="Hacker News" type="rss" htmlUrl="https://news.ycombinator.com/" xmlUrl="https://news.ycombinator.com/rss"/>
+    </outline>
+    </body>
+</opml>
