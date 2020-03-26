@@ -13,6 +13,7 @@ def test_perf(datadir):
     feeds = {
         child.get("title"): child.get("xmlUrl")
         for child in tree.findall(".//outline")
+        if child.get("xmlUrl")
     }
     print(feeds)
 
@@ -22,3 +23,5 @@ def test_perf(datadir):
     p = Planet(feeds)
     p.get_feeds()
 
+    assert len(p._articles) > 0
+    print(p._articles)

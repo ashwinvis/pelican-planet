@@ -16,6 +16,7 @@
 # along with pelican-planet.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import asyncio
 from pathlib import Path
 
 from pelican import signals

@@ -1,4 +1,6 @@
 feedparser>=6.0.0
 Jinja2==2.11.1
-pelica==4.0.1
+pelican==4.0.1
 python-dateutil==2.6.0
+aiohttp==3.6.2
+async-timeout==3.0.1
