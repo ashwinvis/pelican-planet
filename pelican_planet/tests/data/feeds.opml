@@ -5,6 +5,7 @@
 </head>
 <body>
     <outline title="News" text="News">
+        <outline title="PyPy Status Blog" text="PyPy Status Blog" type="rss" htmlUrl="https://morepypy.blogspot.com/" xmlUrl="https://feeds.feedburner.com/PyPyStatusBlog"/>
         <outline title="Planet GNOME" text="Planet GNOME" type="rss" htmlUrl="http://planet.gnome.org/atom.xml" xmlUrl="http://planet.gnome.org/atom.xml"/>
         <outline title="Planet KDE" text="Planet KDE" type="rss" htmlUrl="http://planetKDE.org/" xmlUrl="http://planetkde.org/rss20.xml"/>
         <outline title="BBC News - Home" text="BBC News - Home" type="rss" htmlUrl="https://www.bbc.co.uk/news/" xmlUrl="http://feeds.bbci.co.uk/news/rss.xml"/>

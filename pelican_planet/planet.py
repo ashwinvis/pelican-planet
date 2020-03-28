@@ -29,7 +29,7 @@ from jinja2 import Template
 from .utils import make_date, make_summary
 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("asyncio")
 
 
 class FeedError(Exception):
@@ -43,17 +43,19 @@ class Planet:
         max_articles_per_feed=None,
         max_summary_length=None,
         max_age_in_days=1e5,
+        resolve_redirects=False,
     ):
         self._feeds = feeds
         self._max_articles_per_feed = max_articles_per_feed
         self._max_summary_length = max_summary_length
         self._max_age = datetime.now() - timedelta(days=max_age_in_days)
+        self._resolve_redirects = resolve_redirects
 
         self._articles = []
         self._timeout = 15
 
     async def _fetch(self, url):
-        # print("Fetching", url)
+        logger.info(f"Fetching {url}")
         async with aiohttp.ClientSession() as session:
             with async_timeout.timeout(self._timeout):
                 async with session.get(url) as response:
@@ -61,31 +63,33 @@ class Planet:
                     # least 2x faster. It also avoids some errors and speeds up
                     # by avoiding guesses
                     # https://github.com/aio-libs/aiohttp/issues/3936
-                    # print("Done fetching", url)
-                    return await response.text(encoding="utf-8"), response.status
+                    logger.info(f"Done fetching {url}")
+                    return (
+                        await response.text(encoding="utf-8"),
+                        response.status,
+                    )
 
     async def _get_feed(self, name, url):
         try:
             html, status = await self._fetch(url)
         except Exception as e:
-            raise FeedError("Could not parse %s's feed: %s. %s" % (name, url, e))
+            raise FeedError(
+                "Could not parse %s's feed: %s. %s" % (name, url, e)
+            )
 
         if status is None:
-            raise FeedError(
-                "Could not download %s's feed: %s"
-                % (name, html)
-            )
-        
+            raise FeedError("Could not download %s's feed: %s" % (name, html))
+
         elif status == 404:
             raise FeedError(
                 "404: Could not download %s's feed: not found" % name
             )
-        
+
         elif status not in (200, 301, 302):
             raise FeedError(
                 "%d: Error with %s's feed: %s" % (status, name, html)
             )
-        
+
         return html, name
 
     async def _get_feeds(self):
@@ -121,9 +125,32 @@ class Planet:
 
         return articles
 
+    async def _resolve_redirect(self, url):
+        """Resolves redirect urls.
+
+        This is the async equivalent of:
+        #  with urllib.request.urlopen(url) as f:
+        #     return f.geturl()
+        """
+        async with aiohttp.ClientSession() as session:
+            with async_timeout.timeout(self._timeout):
+                async with session.get(url, allow_redirects=True) as response:
+                    return str(response.url)
+
+    async def _resolve_article_urls(self, articles):
+        for article in articles:
+            try:
+                url = article["link"]
+                redirected_url = await self._resolve_redirect(url)
+                if redirected_url != url:
+                    logger.info(f"{article['link']} -> {redirected_url}")
+                    article["link"] = redirected_url
+            except asyncio.TimeoutError:
+                logger.error(f"Redirect resolution timed out for {url}")
+        return articles
+
     def get_feeds(self):
-        loop = asyncio.get_event_loop()
-        results = loop.run_until_complete(self._get_feeds())
+        results = asyncio.run(self._get_feeds())
         for result in results:
             # Unwrap results and check for exceptions
             if isinstance(result, FeedError):
@@ -144,6 +171,9 @@ class Planet:
             self._articles, key=attrgetter("updated"), reverse=True
         )
         articles = articles[:max_articles]
+
+        if self._resolve_redirects:
+            articles = asyncio.run(self._resolve_article_urls(articles))
 
         template = Template(template.open().read())
         destination.open(mode="w").write(template.render(articles=articles))

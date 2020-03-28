@@ -1,11 +1,14 @@
 """Profile and test performance"""
+import os
+from pathlib import Path
 from xml.etree.ElementTree import parse
 from pytest_profiling import Profiling
 
 
-def test_perf(datadir):
-    """Run as
-    >>> pytest --profile-svg test_perf.py
+def test_perf(datadir, tmpdir):
+    """Run as::
+
+        PYTHONASYNCIODEBUG=1 pytest --profile-svg --log-cli-level=10 test_perf.py
 
     """
     Profiling(False)
@@ -20,11 +23,17 @@ def test_perf(datadir):
     Profiling(True)
     from pelican_planet.planet import Planet, logger
 
-
-    logger.setLevel(10)
-
-    p = Planet(feeds)
+    p = Planet(
+        feeds,
+        max_articles_per_feed=2,
+        max_age_in_days=365,
+        resolve_redirects=True,
+    )
     p.get_feeds()
+
+    templatepath = Path(datadir.join("planet.md.tmpl").strpath)
+    destinationpath = Path(tmpdir.join("planet.md").strpath)
+    p.write_page(templatepath, destinationpath)
 
     assert len(p._articles) > 0
     #  print(p._articles)
