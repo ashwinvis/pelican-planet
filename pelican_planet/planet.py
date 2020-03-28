@@ -50,61 +50,52 @@ class Planet:
         self._max_age = datetime.now() - timedelta(days=max_age_in_days)
 
         self._articles = []
-        #  self._sleep = 60
-        self._timeout = 10
+        self._timeout = 15
 
-    async def _fetch(self, session, url):
-        with async_timeout.timeout(self._timeout):
-            async with session.get(url) as response:
-                return await response.text(), response.status
+    async def _fetch(self, url):
+        # print("Fetching", url)
+        async with aiohttp.ClientSession() as session:
+            with async_timeout.timeout(self._timeout):
+                async with session.get(url) as response:
+                    # NOTE: specifying encoding makes the fetching process at
+                    # least 2x faster. It also avoids some errors and speeds up
+                    # by avoiding guesses
+                    # https://github.com/aio-libs/aiohttp/issues/3936
+                    # print("Done fetching", url)
+                    return await response.text(encoding="utf-8"), response.status
 
-    async def _get_feed(self, session, name, url, future):
+    async def _get_feed(self, name, url):
         try:
-            html, status = await self._fetch(session, url)
-            parsed = feedparser.parse(html)
+            html, status = await self._fetch(url)
         except Exception as e:
-            return future.set_exception(
-                FeedError("Could not parse %s's feed: %s. %s" % (name, url, e))
-            )
+            raise FeedError("Could not parse %s's feed: %s. %s" % (name, url, e))
 
-        if status is None and parsed["bozo"]:
-            return future.set_exception(
-                FeedError(
-                    "Could not download %s's feed: %s"
-                    % (name, parsed["bozo_exception"])
-                )
+        if status is None:
+            raise FeedError(
+                "Could not download %s's feed: %s"
+                % (name, html)
             )
-
+        
         elif status == 404:
-            return future.set_exception(
-                FeedError(
-                    "404: Could not download %s's feed: not found" % name
-                )
+            raise FeedError(
+                "404: Could not download %s's feed: not found" % name
             )
-
+        
         elif status not in (200, 301, 302):
-            return future.set_exception(
-                FeedError(
-                    "%d: Error with %s's feed: %s" % (status, name, parsed)
-                )
+            raise FeedError(
+                "%d: Error with %s's feed: %s" % (status, name, html)
             )
-
-        return future.set_result((parsed, name))
+        
+        return html, name
 
     async def _get_feeds(self):
-        futures = []
-        async with aiohttp.ClientSession() as session:
-            for name, url in self._feeds.items():
-                fut = asyncio.Future()
-                futures.append(fut)
-                try:
-                    await self._get_feed(session, name, url, fut)
-                except FeedError as e:
-                    idx = min(500, len(str(e)))
-                    logger.error(str(e)[:idx])
-                    continue
+        tasks = []
+        for name, url in self._feeds.items():
+            task = asyncio.create_task(self._get_feed(name, url))
+            tasks.append(task)
 
-        return await asyncio.gather(*futures)
+        # print("Waiting for all feeds")
+        return await asyncio.gather(*tasks, return_exceptions=True)
 
     def _get_articles(self, feed, feed_name):
         def _get_articles():
@@ -133,7 +124,18 @@ class Planet:
     def get_feeds(self):
         loop = asyncio.get_event_loop()
         results = loop.run_until_complete(self._get_feeds())
-        for feed, name in results:
+        for result in results:
+            # Unwrap results and check for exceptions
+            if isinstance(result, FeedError):
+                err = str(result)
+                idx = min(500, len(err))
+                logger.error(err[:idx])
+                continue
+            else:
+                html, name = result
+                logger.info("Successfully parsed {}'s feed".format(name))
+
+            feed = feedparser.parse(html)
             articles = self._get_articles(feed, name)
             self._articles.extend(articles)
 

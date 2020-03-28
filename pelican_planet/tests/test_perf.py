@@ -18,10 +18,13 @@ def test_perf(datadir):
     print(feeds)
 
     Profiling(True)
-    from pelican_planet.planet import Planet
+    from pelican_planet.planet import Planet, logger
+
+
+    logger.setLevel(10)
 
     p = Planet(feeds)
     p.get_feeds()
 
     assert len(p._articles) > 0
-    print(p._articles)
+    #  print(p._articles)
