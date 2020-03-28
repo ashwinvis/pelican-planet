@@ -79,7 +79,7 @@ in your Pelican config file:
 
 * ``PLANET_MAX_ARTICLES``: The maximum number of articles to show on the page.
 
-  By default, all articles from all feeds will be added to the page.
+  By default, 20 articles from all feeds will be added to the page.
 
 * ``PLANET_MAX_ARTICLES_PER_FEED``: The maximum of articles from a single feed
   ending on the page.
