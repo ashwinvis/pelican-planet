@@ -175,5 +175,8 @@ class Planet:
         if self._resolve_redirects:
             articles = asyncio.run(self._resolve_article_urls(articles))
 
-        template = Template(template.open().read())
-        destination.open(mode="w").write(template.render(articles=articles))
+        with template.open() as fp:
+            template = Template(fp.read())
+
+        with destination.open(mode="w") as fp:
+            fp.write(template.render(articles=articles))
