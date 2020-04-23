@@ -42,7 +42,7 @@ def make_summary(text, max_words=None):
         "pre",
     ]
     attrs = bleach.sanitizer.ALLOWED_ATTRIBUTES
-    attrs.update({tag: ["src", "alt"] for tag in ("img", "video", "audio")})
+    attrs.update({tag: ["src", "alt", "title"] for tag in ("img", "video", "audio")})
 
     text_truncated_sanitized = bleach.clean(
         text_truncated,
