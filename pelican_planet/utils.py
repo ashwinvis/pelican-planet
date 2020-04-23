@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with pelican-planet.  If not, see <http://www.gnu.org/licenses/>.
 
-
+import bleach
 from dateutil import parser as dtparser
 
 from pelican.utils import truncate_html_words
@@ -29,4 +29,27 @@ def make_summary(text, max_words=None):
     if max_words is None:
         return text
 
-    return truncate_html_words(text, max_words, end_text='…')
+    text_truncated = truncate_html_words(text, max_words, end_text="…")
+
+    tags = bleach.sanitizer.ALLOWED_TAGS + [
+        "p",
+        "img",
+        "video",
+        "audio",
+        "picture",
+        "div",
+        "span",
+        "pre",
+    ]
+    attrs = bleach.sanitizer.ALLOWED_ATTRIBUTES
+    attrs.update({tag: ["src", "alt"] for tag in ("img", "video", "audio")})
+
+    text_truncated_sanitized = bleach.clean(
+        text_truncated,
+        tags=tags,
+        attributes=attrs,
+        strip=True,
+        strip_comments=True,
+    )
+
+    return text_truncated_sanitized
