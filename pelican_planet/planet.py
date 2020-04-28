@@ -141,7 +141,11 @@ class Planet:
         for article in articles:
             try:
                 url = article["link"]
-                redirected_url = await self._resolve_redirect(url)
+                try:
+                    redirected_url = await self._resolve_redirect(url)
+                except aiohttp.client_exceptions.ClientConnectorError as e:
+                    raise asyncio.TimeoutError(str(e))
+
                 if redirected_url != url:
                     logger.info(f"{article['link']} -> {redirected_url}")
                     article["link"] = redirected_url
