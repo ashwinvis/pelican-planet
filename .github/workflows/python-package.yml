@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.6, 3.7, 3.8]
+        python-version: [3.7, 3.8]
 
     steps:
     - uses: actions/checkout@v2
@@ -28,10 +28,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install flake8 pytest
         pip install --user -r requirements-dev.txt
-        pip install -e .  
-    - name: Lint with flake8
-      run: |
-        pytest --flakes --mccabe --pep8 -m 'flakes or mccabe or pep8'
+        pip install -e .
     - name: Test with pytest
       run: |
-        pytest --cov=pelican_planet --cov-report=term-missing --cov-fail-under=82
+        pytest --flakes --cov=pelican_planet --cov-report=term-missing --cov-fail-under=82
